@@ -2,6 +2,9 @@ const puppeteer = require('puppeteer');
 
 class EtLabScraper {
   constructor() {
+    /**
+     * @type {puppeteer.Browser | null}
+     */
     this.browser = null;
     this.baseUrl = 'https://sctce.etlab.in';
   }
@@ -22,7 +25,7 @@ class EtLabScraper {
       const page = await this.browser.newPage();
 
       // Navigate to login page
-      await page.goto(`${this.baseUrl}/user/login`, { timeout: 5000 }).catch(() => {});
+      await page.goto(`${this.baseUrl}/user/login`, { timeout: 3000 }).catch(() => {});
 
       // Login
       await page.type('#LoginForm_username', username);
@@ -31,11 +34,16 @@ class EtLabScraper {
       // Submit and wait for navigation
       await Promise.all([
         page.click('button.btn.btn-success').catch(() => {}),
-        page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 5000 }).catch(() => {}),
+        page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 4000 }).catch(() => {}),
       ]);
 
       // profile page
-      await page.goto(`${this.baseUrl}/student/profile`, { timeout: 5000 }).catch(() => {});
+      await page.goto(`${this.baseUrl}/student/profile`, { timeout: 3000 }).catch(() => {});
+
+      if (page.url().includes('/user/login')) {
+        page.close();
+        throw new Error('Invalid credentials');
+      }
 
       //
 
