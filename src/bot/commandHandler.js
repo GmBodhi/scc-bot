@@ -32,7 +32,6 @@ module.exports = (client) => {
   client.on('interactionCreate', async (/** @type {import("discord.js").Interaction}*/ interaction) => {
     if (interaction.isCommand()) {
       const command = client.commands.get(interaction.commandName);
-      console.log(interaction.commandName);
 
       if (!command) return;
 

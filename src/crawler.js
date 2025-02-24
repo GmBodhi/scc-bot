@@ -20,7 +20,7 @@ class EtLabScraper {
 
   async getData(username, password) {
     try {
-      if (!this.browser) await this.init();
+      if (!this.browser?.connected) await this.init();
 
       const page = await this.browser.newPage();
 
@@ -42,7 +42,7 @@ class EtLabScraper {
 
       if (page.url().includes('/user/login')) {
         page.close();
-        throw new Error('Invalid credentials');
+        return null;
       }
 
       //
