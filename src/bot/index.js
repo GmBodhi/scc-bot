@@ -6,6 +6,7 @@ const client = new Client({
 });
 
 client.commands = new Collection();
+client.interactions = new Collection();
 
 require('./commandHandler')(client);
 

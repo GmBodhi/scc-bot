@@ -41,8 +41,9 @@ class EtLabScraper {
 
       // Extract data
       const profileData = await page.evaluate(() => {
+        /* global document */
         const data = {
-          admNo: document.querySelector('#yw13 > tbody > tr:nth-child(1) > td')?.innerText,
+          admno: document.querySelector('#yw13 > tbody > tr:nth-child(1) > td')?.innerText,
 
           name: document.querySelector('#yw12 > tbody > tr:nth-child(1) > td')?.innerText,
 

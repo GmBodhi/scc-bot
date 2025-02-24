@@ -1,22 +1,27 @@
-const { MessageFlags } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const { EtLabScraper } = require('../crawler');
 const config = require('./config');
-
-const crawler = new EtLabScraper();
 
 //
 
 /** @param {import("discord.js").Client} client */
 module.exports = (client) => {
   const dir = path.join(__dirname, 'commands');
+  const interactiondir = path.join(__dirname, 'interactions');
+
   const files = fs.readdirSync(dir);
+  const interactionfiles = fs.readdirSync(interactiondir);
 
   for (const file of files) {
     const command = require(path.join(dir, file));
     client.commands.set(command.name, command);
   }
+
+  for (const file of interactionfiles) {
+    const interaction = require(path.join(interactiondir, file));
+    client.interactions.set(interaction.id, interaction);
+  }
+
 
   client.once('ready', async () => {
     console.log(`Logged in as ${client.user?.tag}`);
@@ -41,34 +46,7 @@ module.exports = (client) => {
         });
       }
     } else {
-      // TODO: CREATE A handler for this
-
-      if (interaction.customId === 'scc_verify') {
-        await interaction.deferReply({
-          flags: MessageFlags.Ephemeral,
-        });
-
-        const username = interaction.fields.getTextInputValue('scc_verify_username');
-        const password = interaction.fields.getTextInputValue('scc_verify_password');
-
-        // Verify the user
-        const verified = await crawler.getData(username, password).catch(() => null);
-
-        console.log(verified);
-
-        if (verified?.admNo) {
-          interaction.member?.roles.add(config.VERIFIED_ROLE_ID);
-          await interaction.followUp({
-            content: 'You have been verified! :white_check_mark:',
-            ephemeral: true,
-          });
-        } else {
-          await interaction.followUp({
-            content: ":x: You're not verified :x: \n**:warning: If you think this is a mistake, try again.**",
-            ephemeral: true,
-          });
-        }
-      }
+      client.interactions.get(interaction.customId)?.execute(interaction);
     }
   });
 };
