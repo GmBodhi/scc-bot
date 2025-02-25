@@ -33,7 +33,7 @@ class EtLabScraper {
 
       // Submit and wait for navigation
       await Promise.all([
-        page.click('button.btn.btn-success').catch(() => {}),
+        page.click('.btn-success').catch(() => {}),
         page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 4000 }).catch(() => {}),
       ]);
 
