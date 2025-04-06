@@ -18,9 +18,10 @@ module.exports = {
     // Verify the user
     const verified = await crawler.getData(username, password).catch(() => null);
 
-    if (!verified?.admNo)
+    if (!verified?.admno)
       return await interaction.followUp({
-        content: ":x: You're not verified :x: \n**:warning: If you think this is a mistake, try again.**",
+        content:
+          ":x: You're not verified :x: \n**:warning: If you think this is a mistake, try again or contact <@830394727684898856>**",
         ephemeral: true,
       });
 

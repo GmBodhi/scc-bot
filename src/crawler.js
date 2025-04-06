@@ -18,6 +18,12 @@ class EtLabScraper {
     console.log('pptr: Browser launched');
   }
 
+  /**
+   * Get student profile data from etlab
+   * @param {string} username - The username to login with
+   * @param {string} password - The password to login with
+   * @returns {Promise<ProfileData|null>} The student profile data or null if login failed
+   */
   async getData(username, password) {
     try {
       if (!this.browser?.connected) await this.init();
@@ -85,3 +91,16 @@ class EtLabScraper {
 }
 
 module.exports = { EtLabScraper };
+
+/**
+ * Interface representing user profile data from etlab
+ */
+/**
+ * @typedef {Object} ProfileData
+ * @property {string|undefined} admno - Student admission number
+ * @property {string|undefined} name - Student name
+ * @property {string|undefined} email - Student email
+ * @property {string|undefined} batch - Student batch
+ * @property {string|undefined} phone - Student phone number
+ * @property {string|undefined} image - URL of student photo
+ */
