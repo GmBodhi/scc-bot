@@ -3,4 +3,5 @@
  */
 exports.init_events = (client) => {
   require('./memberAdd')(client);
+  require('./messageCreate')(client);
 };
