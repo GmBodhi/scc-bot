@@ -12,6 +12,12 @@ module.exports = {
       flags: MessageFlags.Ephemeral,
     });
 
+    if (interaction.member?.roles.cache.has(config.VERIFIED_ROLE_ID))
+      return await interaction.followUp({
+        content: "You're already verified!",
+        ephemeral: true,
+      });
+
     const username = interaction.fields.getTextInputValue('scc_verify_username');
     const password = interaction.fields.getTextInputValue('scc_verify_password');
 
@@ -24,6 +30,8 @@ module.exports = {
           ":x: You're not verified :x: \n**:warning: If you think this is a mistake, try again or contact <@830394727684898856>**",
         ephemeral: true,
       });
+
+    console.log(verified);
 
     const profile = await Profile.findOneAndUpdate(
       { id: interaction.user.id },
@@ -39,6 +47,13 @@ module.exports = {
         content: "Sorry, I couldn't verify you. Please try again.",
         ephemeral: true,
       });
+
+    if (!interaction.member) {
+      const guild = interaction.client.guilds.cache.get(config.GUILD_ID);
+      if (!guild) return interaction.followUp({ content: 'Something went wrong. Please try again', ephemeral: true });
+      interaction.member = await guild.members.fetch(interaction.user.id).catch(() => null);
+      if (!interaction.member) return interaction.followUp({ content: 'Something went wrong. Please try again', ephemeral: true });
+    }
 
     interaction.member?.roles.add(config.VERIFIED_ROLE_ID);
 

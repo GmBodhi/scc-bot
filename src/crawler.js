@@ -30,20 +30,16 @@ class EtLabScraper {
 
       const page = await this.browser.newPage();
 
-      // Navigate to login page
-      await page.goto(`${this.baseUrl}/user/login`, { timeout: 3000 }).catch(() => {});
+      await page.goto(`${this.baseUrl}/user/login`, { timeout: 5000 }).catch(() => {});
 
-      // Login
       await page.type('#LoginForm_username', username);
       await page.type('#LoginForm_password', password);
 
-      // Submit and wait for navigation
       await Promise.all([
         page.click('.btn-success').catch(() => {}),
         page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 4000 }).catch(() => {}),
       ]);
 
-      // profile page
       await page.goto(`${this.baseUrl}/student/profile`, { timeout: 3000 }).catch(() => {});
 
       if (page.url().includes('/user/login')) {
@@ -55,22 +51,42 @@ class EtLabScraper {
 
       // Extract data
       const profileData = await page.evaluate(() => {
-        /* global document */
         const data = {
-          admno: document.querySelector('#yw13 > tbody > tr:nth-child(1) > td')?.innerText,
+          admno: null,
 
-          name: document.querySelector('#yw12 > tbody > tr:nth-child(1) > td')?.innerText,
+          name: document.querySelector('#user-nav .text')?.textContent?.trim(),
 
-          email: document.querySelector('#yw19 > tbody > tr:nth-child(1) > td')?.innerText,
+          email: null,
 
-          batch: document.querySelector(
-            '#content > div.container-fluid > div:nth-child(3) > div > div > div.widget-content > div > div > center > span > a'
-          )?.innerText,
+          batch: document.body.innerHTML.match(/Studying in <a[^>]+>([^<]+)<\/a>/)?.[1]?.trim(),
 
-          phone: document.querySelector('#yw19 > tbody > tr.even > td')?.innerText,
+          phone: null,
 
           image: document.querySelector('#photo')?.src,
         };
+
+        const tables = document.querySelectorAll('table.detail-view');
+        tables.forEach((table) => {
+          const rows = table.querySelectorAll('tr');
+          rows.forEach((row) => {
+            const th = row.querySelector('th');
+            const td = row.querySelector('td');
+
+            if (th && td) {
+              const key = th.textContent.trim().toLowerCase();
+              const value = td.textContent.trim();
+
+              if (key.includes('admission no')) {
+                data.admno = value;
+              } else if (key === 'email' && !key.includes('college')) {
+                data.email = value;
+              } else if (key === 'mobile no') {
+                data.phone = value;
+              }
+            }
+          });
+        });
+
         return data;
       });
 

@@ -1,13 +1,13 @@
-const { ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const { ModalBuilder, ActionRowBuilder, TextInputStyle } = require('discord.js');
+const { TextInputBuilder } = require('discord.js');
 
 module.exports = {
-  name: 'verify',
-  description: 'Verify your account with Etlab credentials',
+  id: 'scc_verify_prompt',
   /**
-   * @param {import("discord.js").CommandInteraction} interaction
+   * @param {import("discord.js").ButtonInteraction} interaction
    * @returns {Promise<void>}
    */
-  execute: async (interaction) => {
+  execute: async (/** @type {import("discord.js").ButtonInteraction} */ interaction) => {
     const modal = new ModalBuilder()
       .setTitle('Etlab Verification')
       .setCustomId('scc_verify')
@@ -32,5 +32,7 @@ module.exports = {
       );
 
     interaction.showModal(modal);
+
+    //
   },
 };

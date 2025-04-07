@@ -4,7 +4,9 @@ const config = require('./config');
 
 //
 
-/** @param {import("discord.js").Client} client */
+/**
+ * @param {import("discord.js").Client} client
+ */
 module.exports = (client) => {
   const dir = path.join(__dirname, 'commands');
   const interactiondir = path.join(__dirname, 'interactions');
@@ -29,7 +31,7 @@ module.exports = (client) => {
     await registerCommands(client);
   });
 
-  client.on('interactionCreate', async (/** @type {import("discord.js").Interaction}*/ interaction) => {
+client.on('interactionCreate', async (/** @type {import("discord.js").Interaction}*/ interaction) => {
     if (interaction.isCommand()) {
       const command = client.commands.get(interaction.commandName);
 
@@ -52,7 +54,10 @@ module.exports = (client) => {
 
 //
 
-/** @param {import("discord.js").Client} client */
+/**
+ * @param {import("discord.js").Client} client
+ * @returns {Promise<void>}
+ */
 const registerCommands = async (client) => {
   const commands = client.commands.map((command) => ({
     name: command.name,
