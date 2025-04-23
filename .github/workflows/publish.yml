@@ -53,4 +53,5 @@ jobs:
                 script: |
                     cd ~/prod
                     yarn install --prod
+                    cp ../env/prod.env .env
                     pm2 restart all
