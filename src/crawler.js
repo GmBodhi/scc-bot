@@ -54,17 +54,21 @@ class EtLabScraper {
         const data = {
           admno: null,
 
+          // eslint-disable-next-line no-undef
           name: document.querySelector('#user-nav .text')?.textContent?.trim(),
 
           email: null,
 
+          // eslint-disable-next-line no-undef
           batch: document.body.innerHTML.match(/Studying in <a[^>]+>([^<]+)<\/a>/)?.[1]?.trim(),
 
           phone: null,
 
+          // eslint-disable-next-line no-undef
           image: document.querySelector('#photo')?.src,
         };
 
+        // eslint-disable-next-line no-undef
         const tables = document.querySelectorAll('table.detail-view');
         tables.forEach((table) => {
           const rows = table.querySelectorAll('tr');
