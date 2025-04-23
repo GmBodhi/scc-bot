@@ -24,21 +24,20 @@ module.exports = (client) => {
     client.interactions.set(interaction.id, interaction);
   }
 
-
   client.once('ready', async () => {
     console.log(`Logged in as ${client.user?.tag}`);
 
     await registerCommands(client);
   });
 
-client.on('interactionCreate', async (/** @type {import("discord.js").Interaction}*/ interaction) => {
+  client.on('interactionCreate', async (/** @type {import("discord.js").Interaction}*/ interaction) => {
     if (interaction.isCommand()) {
       const command = client.commands.get(interaction.commandName);
 
       if (!command) return;
 
       try {
-        await command.execute(interaction);
+        await command.execute(interaction).catch(console.error);
       } catch (error) {
         console.error(error);
         await interaction.reply({

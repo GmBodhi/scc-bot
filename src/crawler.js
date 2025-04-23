@@ -30,7 +30,7 @@ class EtLabScraper {
 
       const page = await this.browser.newPage();
 
-      await page.goto(`${this.baseUrl}/user/login`, { timeout: 5000 }).catch(() => {});
+      await page.goto(`${this.baseUrl}/user/login`, { timeout: 8000 }).catch(() => {});
 
       await page.type('#LoginForm_username', username);
       await page.type('#LoginForm_password', password);
