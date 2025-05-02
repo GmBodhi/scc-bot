@@ -21,7 +21,11 @@ module.exports = (client) => {
 
   for (const file of interactionfiles) {
     const interaction = require(path.join(interactiondir, file));
-    client.interactions.set(interaction.id, interaction);
+    if (Array.isArray(interaction.id)) {
+      for (const id of interaction.id) {
+        client.interactions.set(id, interaction);
+      }
+    } else client.interactions.set(interaction.id, interaction);
   }
 
   client.once('ready', async () => {
@@ -50,6 +54,18 @@ module.exports = (client) => {
         await client.interactions.get(interaction.customId)?.execute(interaction);
       } catch (error) {
         console.error(error);
+      }
+    } else {
+      const command = client.commands.get(interaction.customId);
+      if (command) return command.execute(interaction).catch(console.error);
+
+      const fallback = client.interactions.find((i) => interaction.customId?.startsWith(i.id));
+      if (fallback) {
+        try {
+          await fallback.execute(interaction).catch(console.error);
+        } catch (error) {
+          console.error(error);
+        }
       }
     }
   });
