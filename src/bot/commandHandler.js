@@ -37,16 +37,20 @@ module.exports = (client) => {
       if (!command) return;
 
       try {
-        await command.execute(interaction).catch(console.error);
+        await command.execute(interaction);
       } catch (error) {
         console.error(error);
-        await interaction.reply({
+        await interaction.followUp({
           content: 'There was an error while executing this command!',
           ephemeral: true,
-        });
+        }).catch(console.error);
       }
-    } else {
-      client.interactions.get(interaction.customId)?.execute(interaction);
+    } else if (interaction.customId) {
+      try {
+        await client.interactions.get(interaction.customId)?.execute(interaction);
+      } catch (error) {
+        console.error(error);
+      }
     }
   });
 };
