@@ -2,12 +2,12 @@ const puppeteer = require('puppeteer');
 
 /**
  * @typedef {Object} ProfileData
- * @property {string?} admno
- * @property {string?} name
- * @property {string?} email
- * @property {string?} batch
- * @property {string?} phone
- * @property {string?} image
+ * @property {string?=} admno
+ * @property {string?=} name
+ * @property {string?=} email
+ * @property {string?=} batch
+ * @property {string?=} phone
+ * @property {string?=} image
  */
 
 /**
@@ -123,6 +123,7 @@ class EtLabScraper {
     }
 
     const profileData = await page.evaluate(() => {
+      /* eslint-disable no-undef */
       try {
         /**
          * @type {ProfileData}
@@ -146,10 +147,10 @@ class EtLabScraper {
                 const td = row.querySelector('td');
 
                 if (th && td) {
-                  const key = th.textContent.trim().toLowerCase();
-                  const value = td.textContent.trim();
+                  const key = th.textContent?.trim().toLowerCase();
+                  const value = td.textContent?.trim();
 
-                  if (key.includes('admission no')) {
+                  if (key?.includes('admission no')) {
                     data.admno = value;
                   } else if (key === 'email' && !key.includes('college')) {
                     data.email = value;
@@ -167,6 +168,7 @@ class EtLabScraper {
         console.error('Page evaluation error:', error);
         return null;
       }
+      /* eslint-enable no-undef */
     });
 
     if (!profileData) {
