@@ -41,6 +41,10 @@ const STATUS_CODES = {
   PAGE_NOT_LOADED: 1,
   INVALID_CREDENTIALS: 2,
   ERROR_CREATING_PAGE: 3,
+  ERROR_FETCHING_DATA: 4,
+  ERROR_CREATING_CONTEXT: 5,
+  ERROR_CLOSING_BROWSER: 6,
+  ERROR_LAUNCHING_BROWSER: 7,
 };
 
 class EtLabScraper {
@@ -84,7 +88,13 @@ class EtLabScraper {
 
     await this.init();
 
-    const page = await this.browser.newPage().catch(() => null);
+    const context = await this.browser?.createBrowserContext().catch(() => null);
+
+    if (!context) {
+      return { status: STATUS_CODES.ERROR_CREATING_CONTEXT };
+    }
+
+    const page = await context.newPage().catch(() => null);
 
     if (!page) {
       return { status: STATUS_CODES.ERROR_CREATING_PAGE };
@@ -119,6 +129,7 @@ class EtLabScraper {
 
     if (page.url().includes('/user/login')) {
       await page.close();
+      context?.close().catch(() => {});
       return { status: STATUS_CODES.INVALID_CREDENTIALS };
     }
 
@@ -177,6 +188,7 @@ class EtLabScraper {
     }
 
     await page.close();
+    await context.close().catch(() => {});
     return { data: profileData, status: STATUS_CODES.SUCCESS };
   }
 
