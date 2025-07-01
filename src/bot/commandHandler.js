@@ -51,7 +51,7 @@ module.exports = (client) => {
       }
     } else if (interaction.customId) {
       try {
-        await client.interactions.get(interaction.customId)?.execute(interaction);
+        await client.interactions.get(interaction.customId?.replace(/\d+$/, ""))?.execute(interaction);
       } catch (error) {
         console.error(error);
       }
