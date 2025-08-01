@@ -64,11 +64,9 @@ class EtLabScraper {
     if (this.browser?.connected) return;
 
     this.browser = await puppeteer
-      .launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      })
-      .catch((error) => {
+      .connect({
+        browserWSEndpoint: `wss://chrome.browserless.io?token=${process.env.PPTR_TOKEN}`
+      }).catch((error) => {
         console.error('Browser launch error:', error);
         throw new Error('Failed to launch browser');
       });
