@@ -16,7 +16,6 @@ const profileSchema = new mongoose.Schema(
     admno: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
     name: {
@@ -32,7 +31,6 @@ const profileSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      required: true,
       trim: true,
       match: [PHONE_REGEX, 'Please provide a valid phone number (10-15 digits)'],
     },
@@ -70,5 +68,7 @@ const profileSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+profileSchema.index({ admno: 1, id: 1 });
 
 module.exports = mongoose.model('Profile', profileSchema);

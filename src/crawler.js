@@ -1,4 +1,3 @@
-const puppeteer = require('puppeteer');
 
 /**
  * @typedef {Object} ProfileData
@@ -10,68 +9,56 @@ const puppeteer = require('puppeteer');
  * @property {string?=} image
  */
 
-/**
- * @typedef {Object} PageNavigationOptions
- * @property {number} loginTimeout
- * @property {number} navigationTimeout
- * @property {number} profileTimeout
- */
 
-/**
- * @type {PageNavigationOptions}
- */
-const DEFAULT_TIMEOUTS = {
-  loginTimeout: 10000,
-  navigationTimeout: 8000,
-  profileTimeout: 6000,
-};
+const DEFAULT_TIMEOUT = 10000;
 
 /**
  * @typedef {Object} StatusCodes
  * @property {number} SUCCESS
- * @property {number} PAGE_NOT_LOADED
+ * @property {number} NETWORK_ERROR
  * @property {number} INVALID_CREDENTIALS
- * @property {number} ERROR_CREATING_PAGE
+ * @property {number} API_ERROR
  * @property {number} ERROR_FETCHING_DATA
- * @property {number} ERROR_CLOSING_BROWSER
- * @property {number} ERROR_LAUNCHING_BROWSER
+ * @property {number} TIMEOUT_ERROR
  */
 const STATUS_CODES = {
   SUCCESS: 0,
-  PAGE_NOT_LOADED: 1,
+  NETWORK_ERROR: 1,
   INVALID_CREDENTIALS: 2,
-  ERROR_CREATING_PAGE: 3,
+  API_ERROR: 3,
   ERROR_FETCHING_DATA: 4,
-  ERROR_CREATING_CONTEXT: 5,
-  ERROR_CLOSING_BROWSER: 6,
-  ERROR_LAUNCHING_BROWSER: 7,
+  TIMEOUT_ERROR: 5,
 };
 
 class EtLabScraper {
   constructor() {
-    /**
-     * @type {puppeteer.Browser | null}
-     */
-    this.browser = null;
-
     this.baseUrl = 'https://sctce.etlab.in';
-
-    /** @type {PageNavigationOptions}  */
-    this.timeouts = { ...DEFAULT_TIMEOUTS };
+    this.timeout = DEFAULT_TIMEOUT;
   }
 
-  async init() {
-    if (this.browser?.connected) return;
-
-    this.browser = await puppeteer
-      .connect({
-        browserWSEndpoint: `wss://chrome.browserless.io?token=${process.env.PPTR_TOKEN}`
-      }).catch((error) => {
-        console.error('Browser launch error:', error);
-        throw new Error('Failed to launch browser');
+  async makeRequest(url, options = {}) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
       });
-
-    console.log('pptr: Browser launched');
+      
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout');
+      }
+      throw error;
+    }
   }
 
   /**
@@ -84,117 +71,67 @@ class EtLabScraper {
       throw new Error('Username and password are required');
     }
 
-    await this.init();
-
-    const context = await this.browser?.createBrowserContext().catch(() => null);
-
-    if (!context) {
-      return { status: STATUS_CODES.ERROR_CREATING_CONTEXT };
-    }
-
-    const page = await context.newPage().catch(() => null);
-
-    if (!page) {
-      return { status: STATUS_CODES.ERROR_CREATING_PAGE };
-    }
-
     try {
-      await page.goto(`${this.baseUrl}/user/login`, {
-        timeout: this.timeouts.loginTimeout,
+      const loginResponse = await this.makeRequest(`${this.baseUrl}/androidapp/app/login`, {
+        method: 'POST',
+        body: JSON.stringify({
+          username: username,
+          password: password,
+        }),
       });
 
-      await page.type('#LoginForm_username', username);
-      await page.type('#LoginForm_password', password);
-
-      await Promise.all([
-        page.click('.btn-success'),
-        page
-          .waitForNavigation({
-            waitUntil: 'networkidle0',
-            timeout: this.timeouts.navigationTimeout,
-          })
-          .catch(() => {}),
-      ]);
-
-      await page.goto(`${this.baseUrl}/student/profile`, {
-        timeout: this.timeouts.profileTimeout,
-      });
-    } catch (error) {
-      console.error('Error typing credentials:', error);
-      await page.close();
-      return { status: STATUS_CODES.PAGE_NOT_LOADED };
-    }
-
-    if (page.url().includes('/user/login')) {
-      await page.close();
-      context?.close().catch(() => {});
-      return { status: STATUS_CODES.INVALID_CREDENTIALS };
-    }
-
-    const profileData = await page.evaluate(() => {
-      /* eslint-disable no-undef */
-      try {
-        /**
-         * @type {ProfileData}
-         */
-        const data = {
-          admno: null,
-          name: document.querySelector('#user-nav .text')?.textContent?.trim() || null,
-          email: null,
-          batch: document.body.innerHTML.match(/Studying in <a[^>]+>([^<]+)<\/a>/)?.[1]?.trim() || null,
-          phone: null,
-          image: document.querySelector('#photo')?.src || null,
-        };
-
-        const tables = document.querySelectorAll('table.detail-view');
-        if (tables) {
-          tables.forEach((table) => {
-            const rows = table.querySelectorAll('tr');
-            if (rows) {
-              rows.forEach((row) => {
-                const th = row.querySelector('th');
-                const td = row.querySelector('td');
-
-                if (th && td) {
-                  const key = th.textContent?.trim().toLowerCase();
-                  const value = td.textContent?.trim();
-
-                  if (key?.includes('admission no')) {
-                    data.admno = value;
-                  } else if (key === 'email' && !key.includes('college')) {
-                    data.email = value;
-                  } else if (key === 'mobile no') {
-                    data.phone = value;
-                  }
-                }
-              });
-            }
-          });
-        }
-
-        return data;
-      } catch (error) {
-        console.error('Page evaluation error:', error);
-        return null;
+      if (!loginResponse.ok) {
+        return { status: STATUS_CODES.NETWORK_ERROR };
       }
-      /* eslint-enable no-undef */
-    });
 
-    if (!profileData) {
-      await page.close();
-      return { status: STATUS_CODES.ERROR_FETCHING_DATA };
+      const loginData = await loginResponse.json();
+
+      if (!loginData.login) {
+        return { status: STATUS_CODES.INVALID_CREDENTIALS };
+      }
+
+      const detailsResponse = await this.makeRequest(`${this.baseUrl}/androidapp/app/getstudentdetails`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${loginData.access_token}`,
+        },
+        body: JSON.stringify({
+          username: username,
+          password: password,
+        }),
+      });
+
+      if (!detailsResponse.ok) {
+        return { status: STATUS_CODES.API_ERROR };
+      }
+
+      const detailsData = await detailsResponse.json();
+
+      if (!detailsData.login) {
+        return { status: STATUS_CODES.ERROR_FETCHING_DATA };
+      }
+
+      const profileData = {
+        admno: detailsData.admission_no || loginData.uname || null,
+        name: detailsData.name || loginData.profile_name || null,
+        email: detailsData.email || null,
+        batch: loginData.course || null,
+        phone: detailsData.phone_home || detailsData.phone_father || detailsData.phone_mother || null,
+        image: loginData.url || null,
+      };
+
+      return { data: profileData, status: STATUS_CODES.SUCCESS };
+    } catch (error) {
+      console.error('API request error:', error);
+      if (error.message === 'Request timeout') {
+        return { status: STATUS_CODES.TIMEOUT_ERROR };
+      }
+      return { status: STATUS_CODES.NETWORK_ERROR };
     }
-
-    await page.close();
-    await context.close().catch(() => {});
-    return { data: profileData, status: STATUS_CODES.SUCCESS };
   }
 
   async close() {
-    if (this.browser) {
-      await this.browser.close().catch(console.error);
-      this.browser = null;
-    }
+    // No cleanup needed for fetch-based implementation
   }
 }
 

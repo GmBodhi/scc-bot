@@ -1,4 +1,5 @@
-const { ModalBuilder, ActionRowBuilder, TextInputStyle, TextInputBuilder } = require('discord.js');
+const { ModalBuilder, ActionRowBuilder, TextInputStyle, TextInputBuilder, MessageFlags } = require('discord.js');
+const config = require('../config');
 
 /**
  * @typedef {Object} VerifyButtonModule
@@ -18,6 +19,15 @@ module.exports = {
    */
   execute: async (interaction) => {
     try {
+      if (interaction.member?.roles.cache.has(config.VERIFIED_ROLE_ID)) {
+        return void (await interaction
+          .reply({
+            content: "✅ You're already verified!",
+            flags: MessageFlags.Ephemeral,
+          })
+          .catch(console.error));
+      }
+
       const modal = new ModalBuilder()
         .setTitle('Etlab Verification')
         .setCustomId('scc_verify')

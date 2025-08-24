@@ -2,6 +2,7 @@ const { MessageFlags } = require('discord.js');
 const { EtLabScraper, STATUS_CODES } = require('../../crawler');
 const config = require('../config');
 const Profile = require('../db/models/profile.model');
+const { notifyExistingAccounts } = require('../utils/notifications');
 
 const crawler = new EtLabScraper();
 
@@ -97,16 +98,71 @@ module.exports = {
 
     let profile = null;
     try {
-      profile = await Profile.findOneAndUpdate(
-        { id: interaction.user.id },
-        {
+      const existingProfile = await Profile.findOne({ id: interaction.user.id });
+      
+      if (existingProfile) {
+        if (existingProfile.admno === verified.admno) {
+          profile = await Profile.findOneAndUpdate(
+            { id: interaction.user.id },
+            { ...verified, id: interaction.user.id },
+            { new: true }
+          );
+        } else {
+          return void (await interaction
+            .followUp({
+              content: `❌ Your Discord account is already linked to a different university profile (${existingProfile.admno}). Use \`/unlink\` first to unlink your current profile.`,
+              ephemeral: true,
+            })
+            .catch(console.error));
+        }
+      } else {
+        const existingAdmnoProfiles = await Profile.find({ admno: verified.admno });
+        
+        if (existingAdmnoProfiles.length >= 3) {
+          return void (await interaction
+            .followUp({
+              content: `❌ Maximum number of Discord accounts (3) already linked to this university profile (${verified.admno}). Contact an admin if you need assistance.`,
+              ephemeral: true,
+            })
+            .catch(console.error));
+        }
+        
+        profile = new Profile({
           ...verified,
           id: interaction.user.id,
-        },
-        { upsert: true, new: true }
-      );
+        });
+        await profile.save();
+
+        if (existingAdmnoProfiles.length > 0) {
+          try {
+            const newUser = await interaction.client.users.fetch(interaction.user.id);
+            await notifyExistingAccounts(
+              interaction.client,
+              existingAdmnoProfiles,
+              {
+                userId: interaction.user.id,
+                username: newUser.username,
+              },
+              {
+                name: verified.name,
+                admno: verified.admno,
+              }
+            );
+          } catch (error) {
+            console.error('Error sending notifications:', error);
+          }
+        }
+      }
     } catch (error) {
       console.error('Profile update error:', error);
+      if (error.code === 11000) {
+        return void (await interaction
+          .followUp({
+            content: '❌ A database conflict occurred. Your Discord account may already be linked. Try `/profile` to check your current status.',
+            ephemeral: true,
+          })
+          .catch(console.error));
+      }
       return void (await interaction
         .followUp({
           content: 'Database error occurred. Please try again later.',
@@ -147,9 +203,16 @@ module.exports = {
     try {
       await interaction.member.roles.add(config.VERIFIED_ROLE_ID);
 
+      const allLinkedProfiles = await Profile.find({ admno: verified.admno });
+      const isMultipleAccounts = allLinkedProfiles.length > 1;
+      
+      const successMessage = isMultipleAccounts 
+        ? `You have been verified! ${verified.name} :white_check_mark:\n\n📌 This university profile is now linked to ${allLinkedProfiles.length} Discord account(s).`
+        : `You have been verified! ${verified.name} :white_check_mark:`;
+
       await interaction
         .followUp({
-          content: `You have been verified! ${verified.name} :white_check_mark:`,
+          content: successMessage,
           ephemeral: true,
         })
         .catch(console.error);
