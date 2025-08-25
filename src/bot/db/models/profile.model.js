@@ -12,7 +12,6 @@ const profileSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
-
     admno: {
       type: String,
       required: true,
@@ -33,6 +32,10 @@ const profileSchema = new mongoose.Schema(
       type: String,
       trim: true,
       match: [PHONE_REGEX, 'Please provide a valid phone number (10-15 digits)'],
+    },
+    reg_no: {
+      type: String,
+      trim: true,
     },
     image: {
       type: String,

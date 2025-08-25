@@ -115,7 +115,8 @@ class EtLabScraper {
         admno: detailsData.admission_no || loginData.uname || null,
         name: detailsData.name || loginData.profile_name || null,
         email: detailsData.email || null,
-        batch: loginData.course || null,
+        batch: loginData.course ?? loginData.academic_year ?? `${loginData.end_year}`,
+        reg_no: detailsData.register_no || null,
         phone: detailsData.phone_home || detailsData.phone_father || detailsData.phone_mother || null,
         image: loginData.url || null,
       };
