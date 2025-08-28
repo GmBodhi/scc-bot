@@ -94,11 +94,7 @@ class EtLabScraper {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${loginData.access_token}`,
-        },
-        body: JSON.stringify({
-          username: username,
-          password: password,
-        }),
+        }
       });
 
       if (!detailsResponse.ok) {
