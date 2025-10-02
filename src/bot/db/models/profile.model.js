@@ -44,7 +44,7 @@ const profileSchema = new mongoose.Schema(
     batch: {
       type: String,
       required: true,
-      trim: true,
+      default: ""
     },
 
     xp: {
@@ -71,7 +71,5 @@ const profileSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
-
-profileSchema.index({ admno: 1, id: 1 });
 
 module.exports = mongoose.model('Profile', profileSchema);
